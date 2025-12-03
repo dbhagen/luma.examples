@@ -70,15 +70,15 @@ def main():
     widget_width = device.width
     widget_height = device.height
 
-    # Create hotspot widgets
-    utime = snapshot(widget_width, widget_height, uptime.render, interval=1.0)
-    mem = snapshot(widget_width, widget_height, memory.render, interval=2.0)
-    dsk = snapshot(widget_width, widget_height, disk.render, interval=2.0)
-    cpuload = snapshot(widget_width, widget_height, cpu_load.render, interval=0.5)
-    clk = snapshot(widget_width, widget_height, clock.render, interval=1.0)
+    # Create hotspot widgets with faster refresh intervals
+    utime = snapshot(widget_width, widget_height, uptime.render, interval=0.5)
+    mem = snapshot(widget_width, widget_height, memory.render, interval=0.5)
+    dsk = snapshot(widget_width, widget_height, disk.render, interval=1.0)
+    cpuload = snapshot(widget_width, widget_height, cpu_load.render, interval=0.25)
+    clk = snapshot(widget_width, widget_height, clock.render, interval=0.5)
 
     # UPS battery monitoring widget
-    ups = snapshot(widget_width, widget_height, ups_battery.render, interval=2.0)
+    ups = snapshot(widget_width, widget_height, ups_battery.render, interval=1.0)
 
     # Network interfaces detection
     network_ifs = psutil.net_if_stats().keys()
@@ -86,15 +86,15 @@ def main():
     eth = first(intersect(network_ifs, ["eth0", "en0"]), "eth0")
     lo = first(intersect(network_ifs, ["lo", "lo0"]), "lo")
 
-    net_wlan = snapshot(widget_width, widget_height, network.stats(wlan), interval=2.0)
-    net_eth = snapshot(widget_width, widget_height, network.stats(eth), interval=2.0)
-    net_lo = snapshot(widget_width, widget_height, network.stats(lo), interval=2.0)
+    net_wlan = snapshot(widget_width, widget_height, network.stats(wlan), interval=1.0)
+    net_eth = snapshot(widget_width, widget_height, network.stats(eth), interval=1.0)
+    net_lo = snapshot(widget_width, widget_height, network.stats(lo), interval=1.0)
 
     # Widget list including UPS battery
     widgets = [cpuload, ups, utime, clk, net_wlan, net_eth, net_lo, mem, dsk]
 
-    # Target frame rate for smooth scrolling
-    target_fps = 60
+    # Target frame rate for smooth scrolling (increased to 120 FPS)
+    target_fps = 120
     frame_time = 1.0 / target_fps
 
     # Horizontal scrolling (full screen widgets)
