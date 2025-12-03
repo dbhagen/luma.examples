@@ -96,18 +96,16 @@ def main():
     # Target frame rate for smooth scrolling
     target_fps = 60
     frame_time = 1.0 / target_fps
-    
+
     # Horizontal scrolling (full screen widgets)
-    virtual = viewport(
-        device, width=widget_width * len(widgets), height=widget_height
-    )
+    virtual = viewport(device, width=widget_width * len(widgets), height=widget_height)
     for i, widget in enumerate(widgets):
         virtual.add_hotspot(widget, (i * widget_width, 0))
 
     for x in pause_every(widget_width, position(widget_width * (len(widgets) - 1))):
         frame_start = time.time()
-        virtual.set_position((x, 0))
-        
+        virtual.set_position((x * 2, 0))  # 2x faster scrolling
+
         # Sleep only for remaining frame time to maintain consistent FPS
         elapsed = time.time() - frame_start
         sleep_time = frame_time - elapsed
