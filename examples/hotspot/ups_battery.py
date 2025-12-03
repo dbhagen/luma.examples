@@ -17,56 +17,86 @@ except ImportError:
     SMBUS_AVAILABLE = False
 
 from hotspot.common import right_text, title_text, tiny_font
+import time
 
 
 # UPS Plus I2C configuration
 DEVICE_BUS = 1
 DEVICE_ADDR = 0x17
 
+# Cache for UPS data to reduce I2C reads
+_ups_cache = None
+_ups_cache_time = 0
+_cache_validity = 1.5  # Cache valid for 1.5 seconds
+
 
 def read_ups_data():
     """
     Read UPS battery data from I2C device.
     Returns dict with battery info or None if unavailable.
+    Uses caching to reduce I2C traffic.
     """
+    global _ups_cache, _ups_cache_time
+
+    # Return cached data if still valid
+    current_time = time.time()
+    if _ups_cache is not None and (current_time - _ups_cache_time) < _cache_validity:
+        return _ups_cache
+
     if not SMBUS_AVAILABLE:
         return None
 
     try:
         bus = smbus2.SMBus(DEVICE_BUS)
 
-        # Read all registers (1-254)
-        aReceiveBuf = [0x00]  # Placeholder for index 0
-        for i in range(1, 255):
-            aReceiveBuf.append(bus.read_byte_data(DEVICE_ADDR, i))
+        # Only read the specific registers we need (much faster than reading all 254)
+        # Registers we need: 5-6, 7-8, 9-10, 19-20, 28-31, 32-35
+        def read_register_range(start, end):
+            """Read a range of registers efficiently."""
+            result = []
+            for i in range(start, end + 1):
+                result.append(bus.read_byte_data(DEVICE_ADDR, i))
+            return result
+
+        # Read only necessary registers
+        bat_voltage = read_register_range(5, 6)
+        charge_typec = read_register_range(7, 8)
+        charge_micro = read_register_range(9, 10)
+        capacity = read_register_range(19, 20)
+        online_time = read_register_range(28, 31)
+        full_time = read_register_range(32, 35)
 
         bus.close()
 
         # Parse battery data from registers
         data = {
-            "capacity_pct": aReceiveBuf[20] << 8
-            | aReceiveBuf[19],  # Battery remaining capacity %
-            "online_time": aReceiveBuf[31] << 24
-            | aReceiveBuf[30] << 16
-            | aReceiveBuf[29] << 8
-            | aReceiveBuf[28],  # Accumulated running time (sec)
-            "full_time": aReceiveBuf[35] << 24
-            | aReceiveBuf[34] << 16
-            | aReceiveBuf[33] << 8
-            | aReceiveBuf[32],  # Accumulated charged time (sec)
-            "bat_voltage": aReceiveBuf[6] << 8
-            | aReceiveBuf[5],  # Battery port voltage (mV)
-            "charge_typec": aReceiveBuf[8] << 8
-            | aReceiveBuf[7],  # Type C charging voltage (mV)
-            "charge_micro": aReceiveBuf[10] << 8
-            | aReceiveBuf[9],  # Micro USB charging voltage (mV)
+            "capacity_pct": capacity[1] << 8
+            | capacity[0],  # Battery remaining capacity %
+            "online_time": online_time[3] << 24
+            | online_time[2] << 16
+            | online_time[1] << 8
+            | online_time[0],  # Accumulated running time (sec)
+            "full_time": full_time[3] << 24
+            | full_time[2] << 16
+            | full_time[1] << 8
+            | full_time[0],  # Accumulated charged time (sec)
+            "bat_voltage": bat_voltage[1] << 8
+            | bat_voltage[0],  # Battery port voltage (mV)
+            "charge_typec": charge_typec[1] << 8
+            | charge_typec[0],  # Type C charging voltage (mV)
+            "charge_micro": charge_micro[1] << 8
+            | charge_micro[0],  # Micro USB charging voltage (mV)
         }
+
+        # Update cache
+        _ups_cache = data
+        _ups_cache_time = current_time
 
         return data
 
     except Exception as e:
-        # Return None if UPS hardware not available
-        return None
+        # Return cached data if available, otherwise None
+        return _ups_cache
 
 
 def format_time(seconds):
