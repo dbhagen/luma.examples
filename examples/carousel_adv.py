@@ -31,9 +31,9 @@ from luma.core.virtual import viewport, snapshot
 from hotspot import memory, uptime, cpu_load, clock, network, disk, ups_battery
 
 
-def position(max):
-    forwards = range(0, max)
-    backwards = range(max, 0, -1)
+def position(max, step=1):
+    forwards = range(0, max, step)
+    backwards = range(max, 0, -step)
     while True:
         for x in forwards:
             yield x
@@ -102,9 +102,10 @@ def main():
     for i, widget in enumerate(widgets):
         virtual.add_hotspot(widget, (i * widget_width, 0))
 
-    for x in pause_every(widget_width, position(widget_width * (len(widgets) - 1))):
+    scroll_speed = 2  # Pixels per frame for faster scrolling
+    for x in pause_every(widget_width, position(widget_width * (len(widgets) - 1), scroll_speed)):
         frame_start = time.time()
-        virtual.set_position((x * 2, 0))  # 2x faster scrolling
+        virtual.set_position((x, 0))
 
         # Sleep only for remaining frame time to maintain consistent FPS
         elapsed = time.time() - frame_start
