@@ -84,7 +84,7 @@ def format_time(seconds):
 
 def render(draw, width, height):
     """Render UPS battery information."""
-    margin = 3
+    margin = 5
 
     data = read_ups_data()
 
