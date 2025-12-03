@@ -66,14 +66,9 @@ def first(iterable, default=None):
 
 
 def main():
-    if device.rotate in (0, 2):
-        # Horizontal
-        widget_width = device.width // 2
-        widget_height = device.height
-    else:
-        # Vertical
-        widget_width = device.width
-        widget_height = device.height // 2
+    # Full screen widgets - one widget at a time
+    widget_width = device.width
+    widget_height = device.height
 
     # Create hotspot widgets
     utime = snapshot(widget_width, widget_height, uptime.render, interval=1.0)
@@ -102,43 +97,22 @@ def main():
     target_fps = 60
     frame_time = 1.0 / target_fps
     
-    if device.rotate in (0, 2):
-        # Horizontal scrolling
-        virtual = viewport(
-            device, width=widget_width * len(widgets), height=widget_height
-        )
-        for i, widget in enumerate(widgets):
-            virtual.add_hotspot(widget, (i * widget_width, 0))
+    # Horizontal scrolling (full screen widgets)
+    virtual = viewport(
+        device, width=widget_width * len(widgets), height=widget_height
+    )
+    for i, widget in enumerate(widgets):
+        virtual.add_hotspot(widget, (i * widget_width, 0))
 
-        for x in pause_every(widget_width, position(widget_width * (len(widgets) - 2))):
-            frame_start = time.time()
-            virtual.set_position((x, 0))
-            
-            # Sleep only for remaining frame time to maintain consistent FPS
-            elapsed = time.time() - frame_start
-            sleep_time = frame_time - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-
-    else:
-        # Vertical scrolling
-        virtual = viewport(
-            device, width=widget_width, height=widget_height * len(widgets)
-        )
-        for i, widget in enumerate(widgets):
-            virtual.add_hotspot(widget, (0, i * widget_height))
-
-        for y in pause_every(
-            widget_height, position(widget_height * (len(widgets) - 2))
-        ):
-            frame_start = time.time()
-            virtual.set_position((0, y))
-            
-            # Sleep only for remaining frame time to maintain consistent FPS
-            elapsed = time.time() - frame_start
-            sleep_time = frame_time - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+    for x in pause_every(widget_width, position(widget_width * (len(widgets) - 1))):
+        frame_start = time.time()
+        virtual.set_position((x, 0))
+        
+        # Sleep only for remaining frame time to maintain consistent FPS
+        elapsed = time.time() - frame_start
+        sleep_time = frame_time - elapsed
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
 
 if __name__ == "__main__":
