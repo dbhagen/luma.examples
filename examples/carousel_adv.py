@@ -22,6 +22,7 @@ Installation:
   $ sudo pip install psutil smbus2
 """
 
+import time
 import psutil
 
 from demo_opts import get_device
@@ -97,6 +98,10 @@ def main():
     # Widget list including UPS battery
     widgets = [cpuload, ups, utime, clk, net_wlan, net_eth, net_lo, mem, dsk]
 
+    # Target frame rate for smooth scrolling
+    target_fps = 60
+    frame_time = 1.0 / target_fps
+    
     if device.rotate in (0, 2):
         # Horizontal scrolling
         virtual = viewport(
@@ -106,7 +111,14 @@ def main():
             virtual.add_hotspot(widget, (i * widget_width, 0))
 
         for x in pause_every(widget_width, position(widget_width * (len(widgets) - 2))):
+            frame_start = time.time()
             virtual.set_position((x, 0))
+            
+            # Sleep only for remaining frame time to maintain consistent FPS
+            elapsed = time.time() - frame_start
+            sleep_time = frame_time - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
     else:
         # Vertical scrolling
@@ -119,7 +131,14 @@ def main():
         for y in pause_every(
             widget_height, position(widget_height * (len(widgets) - 2))
         ):
+            frame_start = time.time()
             virtual.set_position((0, y))
+            
+            # Sleep only for remaining frame time to maintain consistent FPS
+            elapsed = time.time() - frame_start
+            sleep_time = frame_time - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
 
 if __name__ == "__main__":

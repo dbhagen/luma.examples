@@ -8,11 +8,7 @@ from PIL import ImageFont
 
 
 tiny_font = ImageFont.truetype(
-    str(
-        Path(__file__)
-        .resolve()
-        .parent.parent.joinpath("fonts", "C&C Red Alert [INET].ttf")
-    ),
+    str(Path(__file__).resolve().parent.parent.joinpath("fonts", "DejaVuSansMono.ttf")),
     10,
 )
 
